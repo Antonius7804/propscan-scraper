@@ -1,0 +1,14 @@
+{
+  "name": "propscan-scraper",
+  "version": "1.0.0",
+  "description": "PropScan property scraper - finds OTC and auction deals across US counties",
+  "main": "scraper.js",
+  "scripts": {
+    "start": "node scraper.js",
+    "scrape": "node scraper.js"
+  },
+  "dependencies": {
+    "node-fetch": "2.6.9",
+    "cheerio": "1.0.0-rc.12"
+  }
+}
