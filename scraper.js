@@ -194,7 +194,7 @@ async function scrapeRealTDM(county) {
     var link = $(row).find("a").first().attr("href");
     var fullLink = link ? (link.startsWith("http") ? link : "https://" + county.name.toLowerCase().replace(/\s/g,"-") + ".realtdm.com" + link) : county.url;
 
-    var extId = "fl-lat-" + county.name.toLowerCase().replace(/[\s.]/g,"-") + "-" + caseNum.replace(/[^a-zA-Z0-9]/g, "");
+    var extId = "fl-" + county.name.toLowerCase().substring(0,6).replace(/[\s.]/g,"") + "-" + caseNum.replace(/[^a-zA-Z0-9]/g,"").substring(0,20);
 
     properties.push({
       external_id: extId,
@@ -216,7 +216,7 @@ async function scrapeRealTDM(county) {
       assessor_url: null,
       deposit_required: "Cashier's check or money order",
       contact: county.contact,
-      notes: "GOLDEN GEM: Lands Available for Taxes. Went to auction with no bidders. Buy directly from Clerk for opening bid. No competition. First come first served. " + county.name + " County FL.",
+      notes: "OTC Golden Gem. No auction bidders. Buy direct from Clerk. " + county.name + " FL.",
       photo: null
     });
   });
@@ -235,7 +235,7 @@ async function scrapeRealTDM(county) {
         if (Array.isArray(cases)) {
           cases.forEach(function(c, idx) {
             if (!c.case_number && !c.id) return;
-            var extId = "fl-lat-" + county.name.toLowerCase().replace(/[\s.]/g,"-") + "-" + (c.case_number || c.id || idx).toString().replace(/[^a-zA-Z0-9]/g,"");
+            var extId = "fl-" + county.name.toLowerCase().substring(0,6).replace(/[\s.]/g,"") + "-" + (c.case_number || c.id || idx).toString().replace(/[^a-zA-Z0-9]/g,"").substring(0,20);
             properties.push({
               external_id: extId,
               address: c.property_address || c.address || ("Parcel " + (c.parcel_id || c.case_number)),
@@ -255,7 +255,7 @@ async function scrapeRealTDM(county) {
               assessor_url: null,
               deposit_required: "Cashier's check or money order",
               contact: county.contact,
-              notes: "GOLDEN GEM: Lands Available for Taxes. No bidders at auction. Buy directly from Clerk. No competition. " + county.name + " County FL.",
+              notes: "OTC Golden Gem. Buy direct from Clerk. No competition. " + county.name + " FL.",
               photo: null
             });
           });
