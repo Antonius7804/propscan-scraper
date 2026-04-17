@@ -207,12 +207,52 @@ async function scrapeCustomFLCounty(county) {
 
 // Florida counties with known working public Lands Available pages
 var FL_COUNTIES = [
-  // Putnam - confirmed working with real data
-  { name:"Putnam", code:"putnam", city:"Palatka", url:"https://apps.putnam-fl.com/coc/taxdeeds/public/public_LAFT.php", contact:"Putnam County Clerk", assessorUrl:"https://ptax.putnam-fl.com/" },
-  // Marion - has public lands available page
-  { name:"Marion", code:"marion", city:"Ocala", url:"https://www.marioncountyclerk.org/tax-deeds/lands-available-for-taxes", contact:"Marion County Clerk", assessorUrl:"https://www.pa.marion.fl.us/" },
-  // Highlands - confirmed working
-  { name:"Highlands", code:"highland", city:"Sebring", url:"https://highlands.realtdm.com/public/cases/list", contact:"Highlands County Clerk", assessorUrl:"https://www.hcpao.org/" }
+  // CONFIRMED WORKING
+  { name:"Putnam", code:"putnam", city:"Palatka", url:"https://apps.putnam-fl.com/coc/taxdeeds/public/public_LAFT.php", contact:"(386) 329-0361", assessorUrl:"https://ptax.putnam-fl.com/" },
+
+  // TIER 1 - HOTTEST MARKETS
+  // Jacksonville (Duval) - fastest growing FL city, median $282K, 6.2% rental yield
+  { name:"Duval", code:"duval", city:"Jacksonville", url:"https://duval.realtdm.com/public/cases/list", contact:"(904) 255-2000", assessorUrl:"https://www.coj.net/departments/property-appraiser" },
+  // Tampa (Hillsborough) - +5.1% appreciation, corporate relocations
+  { name:"Hillsborough", code:"hillsb", city:"Tampa", url:"https://hillsborough.realtdm.com/public/cases/list", contact:"(813) 276-8100", assessorUrl:"https://www.hcpafl.org/" },
+  // Orlando (Orange) - +3% YoY, tech and tourism growth
+  { name:"Orange", code:"orange", city:"Orlando", url:"https://myeclerk.myorangeclerk.com/cases/search?status=LandsAvailable", contact:"(407) 836-2060", assessorUrl:"https://www.ocpafl.org/" },
+  // Cape Coral / Fort Myers (Lee) - buyer market, post-hurricane OTC inventory
+  { name:"Lee", code:"lee", city:"Fort Myers", url:"https://www.leeclerk.org/departments/official-records-recording/tax-deeds/lands-available", contact:"(239) 533-5000", assessorUrl:"https://www.leepa.org/" },
+  // Port St. Lucie (St. Lucie) - proven appreciation, retiree demand
+  { name:"St. Lucie", code:"sl", city:"Port St. Lucie", url:"https://stlucie.realtdm.com/public/cases/list", contact:"(772) 462-6900", assessorUrl:"https://www.paslc.gov/" },
+
+  // TIER 2 - STRONG MARKETS
+  // Space Coast (Brevard) - affordable coastal, strong appreciation
+  { name:"Brevard", code:"brevard", city:"Melbourne", url:"https://brevard.realtdm.com/public/cases/list", contact:"taxdeedclerks@brevardclerk.us", assessorUrl:"https://www.bcpao.us/" },
+  // Lakeland (Polk) - fastest growing inland, low entry prices
+  { name:"Polk", code:"polk", city:"Bartow", url:"https://polk.realtdm.com/public/cases/list", contact:"(863) 534-4000", assessorUrl:"https://www.pcpao.org/" },
+  // Orlando suburbs (Seminole) - high demand, low inventory
+  { name:"Seminole", code:"semi", city:"Sanford", url:"https://seminole.realtdm.com/public/cases/list", contact:"(407) 665-4330", assessorUrl:"https://www.scpafl.org/" },
+  // Sarasota - luxury market, strong appreciation
+  { name:"Sarasota", code:"sara", city:"Sarasota", url:"https://sarasota.realtdm.com/public/cases/list", contact:"(941) 861-7400", assessorUrl:"https://www.sc-pa.com/" },
+  // Gainesville (Alachua) - university town, steady rental demand
+  { name:"Alachua", code:"alach", city:"Gainesville", url:"https://alachua.realtdm.com/public/cases/list", contact:"(352) 374-3636", assessorUrl:"https://www.acpafl.org/" },
+  // Palm Beach - luxury + affordable inland mix
+  { name:"Palm Beach", code:"pb", city:"West Palm Beach", url:"https://palmbeach.realtdm.com/public/cases/list", contact:"(561) 355-2996", assessorUrl:"https://www.pbcgov.org/papa/" },
+  // Fort Lauderdale (Broward) - strong rental demand
+  { name:"Broward", code:"brow", city:"Fort Lauderdale", url:"https://broward.realtdm.com/public/cases/list", contact:"(954) 831-6565", assessorUrl:"https://bcpa.net/" },
+  // Naples (Collier) - luxury, post-hurricane opportunities
+  { name:"Collier", code:"coll", city:"Naples", url:"https://collier.realtdm.com/public/cases/list", contact:"(239) 252-2646", assessorUrl:"https://www.collierappraiser.com/" },
+  // Ocala (Marion) - booming with new communities, low entry
+  { name:"Marion", code:"marion", city:"Ocala", url:"https://www.marioncountyclerk.org/tax-deeds/lands-available-for-taxes", contact:"(352) 671-5600", assessorUrl:"https://www.pa.marion.fl.us/" },
+  // Pinellas (St. Pete/Clearwater) - high demand coastal
+  { name:"Pinellas", code:"pinel", city:"Clearwater", url:"https://pinellas.realtdm.com/public/cases/list", contact:"(727) 464-3341", assessorUrl:"https://www.pcpao.gov/" },
+  // Pasco (Tampa suburbs) - fast growing, affordable
+  { name:"Pasco", code:"pasco", city:"New Port Richey", url:"https://pasco.realtdm.com/public/cases/list", contact:"(727) 847-2411", assessorUrl:"https://www.pascopa.com/" },
+  // Lake (Orlando suburbs) - growing fast
+  { name:"Lake", code:"lake", city:"Tavares", url:"https://lake.realtdm.com/public/cases/list", contact:"(352) 742-4100", assessorUrl:"https://www.lakecopropappr.com/" },
+  // Osceola (Kissimmee/Disney area) - tourism + growth
+  { name:"Osceola", code:"osc", city:"Kissimmee", url:"https://osceola.realtdm.com/public/cases/list", contact:"(407) 742-3500", assessorUrl:"https://www.property-appraiser.org/" },
+  // Volusia (Daytona) - affordable coastal
+  { name:"Volusia", code:"vol", city:"DeLand", url:"https://volusia.realtdm.com/public/cases/list", contact:"(386) 736-5919", assessorUrl:"https://vcpa.vcgov.org/" },
+  // Highlands - central FL, affordable
+  { name:"Highlands", code:"high", city:"Sebring", url:"https://highlands.realtdm.com/public/cases/list", contact:"(863) 402-6500", assessorUrl:"https://www.hcpao.org/" }
 ];
 
 // Hardcoded verified base properties
