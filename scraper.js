@@ -113,9 +113,14 @@ async function scrapeCustomFLCounty(county) {
       var parcel = parcelMatch ? parcelMatch[1] : caseNum;
       var extId = "fl-" + county.code + "-" + (caseNum || parcel || i).toString().replace(/[^a-zA-Z0-9]/g,"").substring(0,20);
 
+      // Skip junk rows - must have a real price
+      if (!price || price < 100 || price > 5000000) return;
+      // Skip rows where address looks like navigation text
+      var addr = "Parcel " + (parcel || caseNum);
+
       properties.push({
         external_id: extId,
-        address: "Parcel " + (parcel || caseNum),
+        address: addr,
         city: county.city || county.name,
         state: "FL",
         county: county.name + " County",
@@ -155,7 +160,12 @@ async function scrapeCustomFLCounty(county) {
       var address = legal || ("Parcel " + (parcel || caseNum));
       var extId = "fl-" + county.code + "-" + caseNum.replace(/[^a-zA-Z0-9]/g,"").substring(0,20);
 
-      if (!price) return;
+      if (!price || price < 100) return;
+      // Clean up bad addresses from navigation links
+      if (address.indexOf('GIS') > -1 || address.indexOf('Tax Collect') > -1 || 
+          address.indexOf('Auction') > -1 || address.length < 5) {
+        address = "Parcel " + (parcel || caseNum);
+      }
 
       properties.push({
         external_id: extId,
