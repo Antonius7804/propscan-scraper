@@ -83,65 +83,107 @@ async function scrapeCustomFLCounty(county) {
 
   var $ = cheerio.load(html);
   var properties = [];
+  var fullText = $.text();
 
-  // Look for table rows with parcel data
-  $("table tr").each(function(i, row) {
-    var text = $(row).text().replace(/\s+/g, " ").trim();
-    if (!text || text.length < 20) return;
+  // Extract all T.D. blocks using regex on full page text
+  var tdPattern = /T\.D\.\s*([\d\-]+)\s*\|\s*([^\|]+?)\s*\|\s*([\s\S]*?)(?=T\.D\.|$)/g;
+  var matches = [...fullText.matchAll(tdPattern)];
 
-    // Extract parcel number pattern
-    var parcelMatch = text.match(/Parcel\s+(?:Number\s+)?([0-9\-]+)/i);
-    var parcel = parcelMatch ? parcelMatch[1] : null;
+  // If no TD pattern, try table rows
+  if (matches.length === 0) {
+    // Try extracting from table rows
+    $("table tr").each(function(i, row) {
+      if (i === 0) return;
+      var rowText = $(row).text().replace(/\s+/g, " ").trim();
+      
+      var priceMatch = rowText.match(/Estimated[^$]*\$([\d,]+\.?\d*)/i) || 
+                       rowText.match(/Purchase[^$]*\$([\d,]+\.?\d*)/i) ||
+                       rowText.match(/\$([\d,]+\.?\d*)/);
+      var parcelMatch = rowText.match(/Parcel\s*(?:Number|#|No\.?)?\s*:?\s*([\d\-]+)/i) ||
+                        rowText.match(/([\d]{2}-[\d]{2}-[\d]{2}-[\d]+-[\d]+-[\d]+)/);
+      var caseMatch = rowText.match(/T\.?D\.?\s*([\d\-]+)/i) ||
+                      rowText.match(/Case[^:]*:\s*([\d\-]+)/i);
+      var dateMatch = rowText.match(/(?:Available|Purchase)[^:]*:?\s*([\d]{1,2}\/[\d]{1,2}\/[\d]{4})/i);
 
-    // Extract TD case number
-    var caseMatch = text.match(/T\.?D\.?\s+([\d\-]+)/i);
-    var caseNum = caseMatch ? caseMatch[1].replace(/[^0-9\-]/g,"") : null;
+      if (!caseMatch && !parcelMatch) return;
+      var price = priceMatch ? parseFloat(priceMatch[1].replace(/,/g,"")) : null;
+      if (price === 0 || price === null) return; // skip zero price rows
 
-    if (!parcel && !caseNum) return;
+      var caseNum = caseMatch ? caseMatch[1] : null;
+      var parcel = parcelMatch ? parcelMatch[1] : caseNum;
+      var extId = "fl-" + county.code + "-" + (caseNum || parcel || i).toString().replace(/[^a-zA-Z0-9]/g,"").substring(0,20);
 
-    // Extract price
-    var priceMatch = text.match(/(?:Estimated\s+Purchase\s+Price|Price|Amount)[:\s]+\$([0-9,]+\.?\d*)/i);
-    var price = priceMatch ? parseFloat(priceMatch[1].replace(/,/g,"")) : null;
-
-    // Extract auction date
-    var dateMatch = text.match(/(?:Auction|Available)[^\d]+([\d]{1,2}\/[\d]{1,2}\/[\d]{4})/i);
-    var auctionDate = dateMatch ? dateMatch[1] : null;
-
-    // Extract legal description as address
-    var legalMatch = text.match(/([A-Z][A-Z\s0-9]+(?:LAKE|GARDENS|ESTATES|HEIGHTS|PARK|HILLS|ACRES|TRAIL|TERRACE|MANOR|GROVE|CREST|PINES|OAKS|BLUFF|RIDGE)[A-Z\s0-9,]+)/i);
-    var address = legalMatch ? legalMatch[1].trim().substring(0,100) : ("Parcel " + (parcel || caseNum));
-
-    // Extract GIS link for more detail
-    var gisLink = $(row).find("a[href*='gis'], a[href*='GIS'], a[href*='map'], a[href*='Map']").first().attr("href") || "";
-
-    var extId = "fl-" + county.code + "-" + (caseNum || parcel || i).toString().replace(/[^a-zA-Z0-9]/g,"").substring(0,20);
-
-    properties.push({
-      external_id: extId,
-      address: address,
-      city: county.city || county.name,
-      state: "FL",
-      county: county.name + " County",
-      zip: null,
-      status: "otc",
-      min_bid: price,
-      arv: null,
-      beds: null, baths: null, sqft: null, year_built: null,
-      parcel_id: parcel || caseNum,
-      auction_date: auctionDate,
-      auction_ends: null,
-      source_name: county.name + " County Clerk — Lands Available",
-      source_url: county.url,
-      county_url: county.url,
-      assessor_url: county.assessorUrl || null,
-      deposit_required: "Cashier's check",
-      contact: county.contact || (county.name + " County Clerk"),
-      notes: "OTC: Lands Available for Taxes. No auction bidders. Buy direct from Clerk.",
-      photo: null
+      properties.push({
+        external_id: extId,
+        address: "Parcel " + (parcel || caseNum),
+        city: county.city || county.name,
+        state: "FL",
+        county: county.name + " County",
+        zip: null,
+        status: "otc",
+        min_bid: price,
+        arv: price ? Math.round(price * 3) : null, // rough ARV estimate: 3x purchase price for OTC
+        beds: null, baths: null, sqft: null, year_built: null,
+        parcel_id: parcel || caseNum,
+        auction_date: dateMatch ? dateMatch[1] : null,
+        auction_ends: null,
+        source_name: county.name + " County Clerk — Lands Available",
+        source_url: county.url,
+        county_url: county.url,
+        assessor_url: county.assessorUrl || null,
+        deposit_required: "Cashier's check",
+        contact: county.contact || (county.name + " County Clerk"),
+        notes: "OTC: Lands Available for Taxes. No auction bidders. Buy direct from Clerk.",
+        photo: null
+      });
     });
-  });
+  } else {
+    // Parse TD blocks
+    matches.forEach(function(match, idx) {
+      var caseNum = match[1];
+      var owner = match[2].trim();
+      var blockText = match[3];
 
-  // Deduplicate by external_id
+      var priceMatch = blockText.match(/Estimated Purchase Price:\s*\$([\d,]+\.?\d*)/i);
+      var parcelMatch = blockText.match(/Parcel Number\s+([\d\-]+)/i);
+      var dateMatch = blockText.match(/Available for Purchase:\s*([\d\/]+)/i);
+      var legalMatch = blockText.match(/^([A-Z][A-Z0-9\s,\-\/]+(?:LOT|BLK|BLOCK|ACRES|UNIT|TRACT|PLAT|SUBDIVISION|ESTATES|GARDENS|LAKES?|PARK|HILLS?|HEIGHTS?)[A-Z0-9\s,\-\/]+)/i);
+
+      var price = priceMatch ? parseFloat(priceMatch[1].replace(/,/g,"")) : null;
+      var parcel = parcelMatch ? parcelMatch[1] : null;
+      var legal = legalMatch ? legalMatch[1].trim().substring(0,100) : null;
+      var address = legal || ("Parcel " + (parcel || caseNum));
+      var extId = "fl-" + county.code + "-" + caseNum.replace(/[^a-zA-Z0-9]/g,"").substring(0,20);
+
+      if (!price) return;
+
+      properties.push({
+        external_id: extId,
+        address: address,
+        city: county.city || county.name,
+        state: "FL",
+        county: county.name + " County",
+        zip: null,
+        status: "otc",
+        min_bid: price,
+        arv: price ? Math.round(price * 3) : null,
+        beds: null, baths: null, sqft: null, year_built: null,
+        parcel_id: parcel || caseNum,
+        auction_date: dateMatch ? dateMatch[1] : null,
+        auction_ends: null,
+        source_name: county.name + " County Clerk — Lands Available",
+        source_url: county.url,
+        county_url: county.url,
+        assessor_url: county.assessorUrl || null,
+        deposit_required: "Cashier's check",
+        contact: county.contact || (county.name + " County Clerk"),
+        notes: "OTC Golden Gem. Owner: " + owner + ". Buy direct from Clerk.",
+        photo: null
+      });
+    });
+  }
+
+  // Deduplicate
   var seen = new Set();
   properties = properties.filter(p => {
     if (seen.has(p.external_id)) return false;
