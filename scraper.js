@@ -1397,9 +1397,6 @@ var HIDDEN_GEM_COUNTIES = [
     sourceName:"Madison County FL — HIDDEN GEM: north FL, very cheap land" }
 ];
 
-
-];
-
 // Hidden gem small rural counties — added separately so we can batch them
 var HIDDEN_GEM_COUNTIES = [
   { name:"Terrell", code:"tx-terrell", city:"Sanderson", state:"TX", type:"struck_off", url:"https://www.co.terrell.tx.us/tax-assessor-collector", contact:"Terrell County Tax Office", sourceName:"Terrell County TX — HIDDEN GEM: $50 bids, no competition" },
